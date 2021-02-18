@@ -26,31 +26,33 @@ function toggleAddCategoryButton(bool) {
 
 function appendTableCategory(categoryCount) {
     
-    $('#categories-and-items').append(
-        `
-        <div id='categoryName-${categoryCount}'>
-            <div class="categoryRow flex-center-row">
-                <h3 id='${categoryCount}' placeholder="Type category name here" contenteditable="true"></h3>
-                <i class="fas fa-times display-none red-x-${categoryCount}"></i>
-            </div>
-            <div id="categoryItems-${categoryCount}">
-                 
-            </div>
+    let storedItem = `
+    <div id='categoryName-${categoryCount}'>
+        <div class="categoryRow flex-center-row">
+            <h3 id='${categoryCount}' placeholder="Type category name here" contenteditable="true"></h3>
+            <i class="fas fa-times display-none red-x-${categoryCount}"></i>
         </div>
-        ` 
-    );
+        <div id="categoryItems-${categoryCount}">
+             
+        </div>
+    </div>
+    ` 
+    
+    $('#categories-and-items').append(storedItem);
+    saveCategoryToStorage(storedItem, categoryCount);
 }
 
 function appendMenuItem(categoryCount, itemCount) {
-    $(`#categoryItems-${categoryCount}`).append(
-        `
+
+    let storedItem =
+    `
         <div class="itemRow flex-center-row" class="${categoryCount}${itemCount}">
             <h4 class="${categoryCount}${itemCount}" contenteditable="true" placeholder="Type item here"></h4>
             <i class="fas fa-times display-none red-x-item-${categoryCount}${itemCount}"></i>
         </div> 
-        `
-    );
-   
+    `;
+    $(`#categoryItems-${categoryCount}`).append(storedItem);
+    saveItemToStorage(storedItem, categoryCount, itemCount);
 }
 
 
@@ -79,6 +81,7 @@ function onCategoryClick(element, categoryCount) {
                 e.preventDefault();
             };
         });
+        
         $(`.red-x-${categoryCount}`).removeClass('display-none');
         $(`.red-x-${categoryCount}`).on('click', function() {
             $(element).remove();
@@ -98,7 +101,6 @@ function onCategoryClick(element, categoryCount) {
 
 function addItem(categoryCount,itemCount) {
     toggleButtonDisabled('#add-item-btn', false);
-   
     if($(`h3#${categoryCount}`).is(':focus')) {
         $('#add-item-btn').one('click', function() {
             appendMenuItem(categoryCount, itemCount);
@@ -108,13 +110,30 @@ function addItem(categoryCount,itemCount) {
                     $(`h4.${categoryCount}${itemCount}`).remove();
                     $(this).remove();
                 });
+                $(this).on('blur', function() {
+                    $(`.red-x-item-${categoryCount}${itemCount}`).addClass('display-none');
+                });
             });
         });
     }
-    
-    
-    
 }
+
+function saveCategoryToStorage(storedCat, categoryCount) {
+    let storedObject = { categoryCount, storedCat};
+    localStorage.setItem('category', JSON.stringify(storedObject));
+}
+
+function getCategoriesFromStorage() {
+    const categories = JSON.parse(localStorage.getItem('category'));
+    return categories;
+}
+
+function saveItemToStorage(storedItem, categoryCount, itemCount) {
+    const categories = getCategoriesFromStorage();
+    console.log(categories);
+}
+
+
 
 
 
