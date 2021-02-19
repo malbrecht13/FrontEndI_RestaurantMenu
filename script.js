@@ -1,13 +1,13 @@
 $(document).ready(function() {
     
+    loadMenu();
     addCategoryListener();
     $('body').attr("spellcheck",false);
+    
 
 });
 
-
-
-function addCategoryListener() {
+function addCategoryListener() {  
     let categoryCount = 0;
     $('#add-category-btn').on('click', function() {
         toggleButtonDisabled('#add-item-btn', true);
@@ -16,8 +16,19 @@ function addCategoryListener() {
         appendTableCategory(categoryCount);
         onCategoryClick(`h3#${categoryCount}`, categoryCount);
         categoryCount++;
-    });
-    
+    }); 
+}
+
+function loadMenu() {
+    const categories = getCategories();
+    const items = getItems();
+    for(let i in categories) {
+        if(categories[i]) {
+            console.log(categories[i]);
+            appendTableCategory(i);
+            onCategoryClick(`h3#${i}`, i);
+        }
+    }
 }
 
 function toggleAddCategoryButton(bool) {
@@ -25,11 +36,10 @@ function toggleAddCategoryButton(bool) {
 }
 
 function appendTableCategory(categoryCount) {
-    
     let storedItem = `
     <div id='categoryName-${categoryCount}'>
         <div class="categoryRow flex-center-row">
-            <h3 id='${categoryCount}' placeholder="Type category name here" contenteditable="true"></h3>
+            <h3 class="text-center" id='${categoryCount}' placeholder="Type category name here" contenteditable="true"></h3>
             <i class="fas fa-times display-none red-x-${categoryCount}"></i>
         </div>
         <div id="categoryItems-${categoryCount}">
@@ -39,20 +49,21 @@ function appendTableCategory(categoryCount) {
     ` 
     
     $('#categories-and-items').append(storedItem);
-    saveCategoryToStorage(storedItem, categoryCount);
+    saveCategory(categoryCount, storedItem);
+    getCategories();
 }
 
 function appendMenuItem(categoryCount, itemCount) {
-
+    
     let storedItem =
     `
-        <div class="itemRow flex-center-row" class="${categoryCount}${itemCount}">
-            <h4 class="${categoryCount}${itemCount}" contenteditable="true" placeholder="Type item here"></h4>
+        <div class="itemRow" class="${categoryCount}${itemCount}">
+            <h4 class="${categoryCount}${itemCount} text-center" contenteditable="true" placeholder="Type item here"></h4>
             <i class="fas fa-times display-none red-x-item-${categoryCount}${itemCount}"></i>
         </div> 
     `;
     $(`#categoryItems-${categoryCount}`).append(storedItem);
-    saveItemToStorage(storedItem, categoryCount, itemCount);
+    saveItem(categoryCount, storedItem);
 }
 
 
@@ -73,6 +84,7 @@ function addUnderlineTo(element) {
 function onCategoryClick(element, categoryCount) {
     const maxLength = 20;
     let itemCount = 0;
+    
     $(element).on('focus', function() {
         itemCount++;
         addItem(categoryCount, itemCount);
@@ -84,16 +96,19 @@ function onCategoryClick(element, categoryCount) {
         
         $(`.red-x-${categoryCount}`).removeClass('display-none');
         $(`.red-x-${categoryCount}`).on('click', function() {
+            removeCategory(categoryCount)
             $(element).remove();
             $(`#categoryItems-${categoryCount}`).remove();
             $(this).remove();
+            itemCount = 0;
         });
         $(element).on('blur', function () {
             setTimeout( function() {
                 $(`.red-x-${categoryCount}`).addClass('display-none');
                 addUnderlineTo(element);
                 toggleButtonDisabled('#add-item-btn', true);
-            }, 500); //this was the shortest time that would still allow me to delete using the X
+                updateTextContent(categoryCount);
+            }, 200); 
         });
     
     });
@@ -107,31 +122,110 @@ function addItem(categoryCount,itemCount) {
             $(`h4.${categoryCount}${itemCount}`).on('focus', function() {
                 $(`.red-x-item-${categoryCount}${itemCount}`).removeClass('display-none');
                 $(`.red-x-item-${categoryCount}${itemCount}`).on('click', function() {
+                    removeItemFromStorage(categoryCount, itemCount);
                     $(`h4.${categoryCount}${itemCount}`).remove();
                     $(this).remove();
                 });
                 $(this).on('blur', function() {
-                    $(`.red-x-item-${categoryCount}${itemCount}`).addClass('display-none');
+                    setTimeout( function() {
+                        $(`.red-x-item-${categoryCount}${itemCount}`).addClass('display-none');
+                    }, 200);
                 });
             });
         });
     }
 }
 
-function saveCategoryToStorage(storedCat, categoryCount) {
-    let storedObject = { categoryCount, storedCat};
-    localStorage.setItem('category', JSON.stringify(storedObject));
+function updateTextContent(categoryCount) {
+    const categories = JSON.parse(localStorage.getItem('categories'));
+    if($(`h3#${categoryCount}`).html()) {
+        categories[categoryCount] = `
+        <div id='categoryName-${categoryCount}'>
+            <div class="categoryRow flex-center-row">
+                <h3 class="text-center" id='${categoryCount}' placeholder="Type category name here" contenteditable="true">${$(`h3#${categoryCount}`).html()}</h3>
+                <i class="fas fa-times display-none red-x-${categoryCount}"></i>
+            </div>
+            <div id="categoryItems-${categoryCount}">
+                
+            </div>
+        </div>
+
+    `;
+    localStorage.setItem('categories', JSON.stringify(categories));
+    }
+    
 }
 
-function getCategoriesFromStorage() {
-    const categories = JSON.parse(localStorage.getItem('category'));
-    return categories;
+
+function saveCategory(categoryCount,storedItem) {
+    const categories = JSON.parse(localStorage.getItem('categories'));
+    if(categories) {
+        let countArray = [];
+        for(let category of categories) {
+            countArray.push(category.categoryCount);
+        }
+        if(countArray.includes(categoryCount)) {
+            for(let i in categories) {
+                if(i === categoryCount) {
+                    categories[i] = storedItem;
+                }
+            }
+        } else {
+            categories[categoryCount] = storedItem;
+        }
+        localStorage.setItem('categories', JSON.stringify(categories));
+    } else {
+        const newObj = [storedItem];
+        localStorage.setItem('categories', JSON.stringify(newObj));
+    }
 }
 
-function saveItemToStorage(storedItem, categoryCount, itemCount) {
-    const categories = getCategoriesFromStorage();
-    console.log(categories);
+function removeCategory(categoryCount) {
+    let categories = getCategories();
+    console.log(categoryCount);
+    categories[categoryCount] = '';
+    localStorage.setItem('categories', JSON.stringify(categories)); 
 }
+
+function removeItemFromStorage(categoryCount, itemCount) {
+
+}
+
+function getCategories() {
+    const categories = JSON.parse(localStorage.getItem('categories'));
+    if(categories) {
+        return categories;
+    } else {
+        return '';
+    }
+}
+
+function saveItem(categoryCount,storedItem) {
+    const categories = getCategories();
+    let itemsArray = [{}];
+    let items = getItems();
+    if(items) {
+        itemsArray = items;
+        for(let i in categories) {
+            if(i == categoryCount) {
+                itemsArray.push({categoryCount : storedItem});
+            }
+        }
+    } else {
+        itemsArray = [ {0: storedItem} ];
+    }
+    console.log(itemsArray);
+    localStorage.setItem('items', JSON.stringify(itemsArray));
+}
+
+function getItems() {
+    const items = JSON.parse(localStorage.getItem('items'));
+    if(items) {
+        return items;
+    } else return [];
+}
+
+
 
 
 

@@ -59,6 +59,7 @@ h3 {
     font-size: 1rem;
     font-family: 'Dancing Script', cursive;
     margin-right: 30px;
+    max-width: 70vw;
 }
 
 h4[contenteditable="true"]:empty:before {
